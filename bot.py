@@ -24,24 +24,21 @@ LE_TUE_RICERCHE = [
 @tasks.loop(minutes=3)
 async def check_vinted():
     print("🔄 Scansionando Vinted...")
-    try:
-        for ricerca in LE_TUE_RICERCHE:
-            try:
-                response = requests.get(ricerca["url"], headers={'User-Agent': 'Mozilla/5.0'})
-                if response.status_code == 200:
-                    soup = BeautifulSoup(response.text, 'html.parser')
-                    items = soup.find_all('div', {'class': 'feed-grid__item'})
-                    if items:
-                        print(f"✅ Trovati {len(items)} articoli per {ricerca['name']}")
-                    else:
-                        print(f"❌ Nessun articolo trovato per {ricerca['name']}")
+    for ricerca in LE_TUE_RICERCHE:
+        try:
+            response = requests.get(ricerca["url"], headers={'User-Agent': 'Mozilla/5.0'}, timeout=10)
+            if response.status_code == 200:
+                soup = BeautifulSoup(response.text, 'html.parser')
+                items = soup.find_all('div', {'class': 'feed-grid__item'})
+                if items:
+                    print(f"✅ Trovati {len(items)} articoli per {ricerca['name']}")
                 else:
-                    print(f"❌ Errore HTTP {response.status_code} per {ricerca['name']}")
-            except Exception as e:
-                print(f"❌ Errore per {ricerca['name']}: {str(e)}")
-            time.sleep(1)
-    except Exception as e:
-        print(f"❌ Errore generale: {str(e)}")
+                    print(f"❌ Nessun articolo trovato per {ricerca['name']}")
+            else:
+                print(f"❌ Errore HTTP {response.status_code} per {ricerca['name']}")
+        except Exception as e:
+            print(f"❌ Errore per {ricerca['name']}: {str(e)}")
+        time.sleep(2)
 
 @bot.event
 async def on_ready():
@@ -49,8 +46,5 @@ async def on_ready():
     print(f'🔍 Monitoraggio di {len(LE_TUE_RICERCHE)} ricerche...')
     check_vinted.start()
 
-@bot.slash_command(name="status", description="Controlla lo stato del bot")
-async def status(ctx):
-    await ctx.respond("✅ Bot online e funzionante!")
-
 bot.run(os.getenv('DISCORD_TOKEN'))
+
